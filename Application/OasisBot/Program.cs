@@ -51,7 +51,7 @@ internal static class Program
         [Option("headless", Required = false, HelpText = "Start the bot without graphical user interface")]
         public bool Headless { get; set; }
 
-        [Option("update", Required = false, HelpText = "Check for and install updates automatically")]
+        [Option("update", Required = false, HelpText = "Check for and install updates, then exit")]
         public bool Update { get; set; }
     }
 
