@@ -103,6 +103,16 @@ public partial class Updater : UIWindow
 
     private void btnDownload_Click(object sender, EventArgs e)
     {
+        StartDownload();
+    }
+
+    public void StartAutomaticUpdate()
+    {
+        StartDownload();
+    }
+
+    private void StartDownload()
+    {
         try
         {
             downloadProgress.Visible = true;
@@ -113,9 +123,9 @@ public partial class Updater : UIWindow
 
             var installerPath = Path.Combine(Kernel.BasePath, "RSBot-Setup-Latest.exe");
 
-            _webClient.DownloadFileAsync(new Uri(_downloadUrl), installerPath);
             _webClient.DownloadProgressChanged += _Client_DownloadProgressChanged;
             _webClient.DownloadFileCompleted += _Client_DownloadFileCompleted;
+            _webClient.DownloadFileAsync(new Uri(_downloadUrl), installerPath);
         }
         catch (Exception ex)
         {
@@ -143,33 +153,11 @@ public partial class Updater : UIWindow
     /// <returns><c>true</c> if there is otherwise, <c>false</c>.</returns>
     public async Task<bool> Check()
     {
-        if (!GeneralConfig.Exists("RSBot.AutoUpdate"))
-        {
-            GeneralConfig.Set("RSBot.AutoUpdate", true);
-            GeneralConfig.Save();
-        }
-
-        if (!GeneralConfig.Get("RSBot.AutoUpdate", true))
-            return false;
-
-        // Rate limiting: Only check once every 12 hours unless in debug environment
-        var lastCheckStr = GeneralConfig.Get<string>("RSBot.LastUpdateCheck", "0");
-        if (long.TryParse(lastCheckStr, out var lastCheckTicks))
-        {
-            var lastCheck = new DateTime(lastCheckTicks);
-            if (DateTime.Now < lastCheck.AddHours(12) && !GlobalConfig.Get("RSBot.DebugEnvironment", false))
-                return false;
-        }
-
         if (
             !File.Exists(Path.Combine(Kernel.BasePath, "unins000.exe"))
             && !GlobalConfig.Get("RSBot.DebugEnvironment", false)
         )
             return false;
-
-        // Update the last check time immediately to prevent multiple instances from triggering simultaneously
-        GeneralConfig.Set("RSBot.LastUpdateCheck", DateTime.Now.Ticks.ToString());
-        GeneralConfig.Save();
 
         try
         {
