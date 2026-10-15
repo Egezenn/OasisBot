@@ -105,6 +105,8 @@ public partial class Updater : UIWindow
         }
         catch (Exception ex)
         {
+            _isDownloading = false;
+            btnDownload.Enabled = true;
             MessageBox.Show(
                 $"Failed to launch installer: {ex.Message}\n\nNote: If you are testing with the mock updater, the downloaded file is a dummy and cannot be executed.",
                 "Update Error",
