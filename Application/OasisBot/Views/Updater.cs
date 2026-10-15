@@ -39,6 +39,11 @@ public partial class Updater : UIWindow
     /// </summary>
     private string _downloadUrl;
 
+    /// <summary>
+    /// Indicates whether a download is currently in progress
+    /// </summary>
+    private bool _isDownloading;
+
     public Updater()
     {
         InitializeComponent();
@@ -66,6 +71,32 @@ public partial class Updater : UIWindow
 
     private void _Client_DownloadFileCompleted(object sender, AsyncCompletedEventArgs e)
     {
+        if (e.Cancelled)
+        {
+            _isDownloading = false;
+            btnDownload.Enabled = true;
+            MessageBox.Show(
+                "The update download was cancelled.",
+                "Update Cancelled",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information
+            );
+            return;
+        }
+
+        if (e.Error != null)
+        {
+            _isDownloading = false;
+            btnDownload.Enabled = true;
+            MessageBox.Show(
+                $"Failed to download update: {e.Error.Message}",
+                "Update Error",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error
+            );
+            return;
+        }
+
         var installerPath = Path.Combine(Kernel.BasePath, "RSBot-Setup-Latest.exe");
         try
         {
@@ -113,6 +144,12 @@ public partial class Updater : UIWindow
 
     private void StartDownload()
     {
+        if (_webClient == null || string.IsNullOrWhiteSpace(_downloadUrl) || _isDownloading)
+            return;
+
+        _isDownloading = true;
+        btnDownload.Enabled = false;
+
         try
         {
             downloadProgress.Visible = true;
@@ -123,12 +160,16 @@ public partial class Updater : UIWindow
 
             var installerPath = Path.Combine(Kernel.BasePath, "RSBot-Setup-Latest.exe");
 
+            _webClient.DownloadProgressChanged -= _Client_DownloadProgressChanged;
+            _webClient.DownloadFileCompleted -= _Client_DownloadFileCompleted;
             _webClient.DownloadProgressChanged += _Client_DownloadProgressChanged;
             _webClient.DownloadFileCompleted += _Client_DownloadFileCompleted;
             _webClient.DownloadFileAsync(new Uri(_downloadUrl), installerPath);
         }
         catch (Exception ex)
         {
+            _isDownloading = false;
+            btnDownload.Enabled = true;
             MessageBox.Show(ex.Message, "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
             Environment.Exit(0);
         }
